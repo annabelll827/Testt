@@ -1,0 +1,1149 @@
+<!DOCTYPE html>
+<html lang="ku" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Nova TV</title>
+
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <!-- Alpine.js -->
+    <script defer src="https://unpkg.com/alpinejs@3.x.x/dist/cdn.min.js"></script>
+
+    <!-- Video.js -->
+    <link href="https://vjs.zencdn.net/8.10.0/video-js.css" rel="stylesheet" />
+
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <style>
+        * {
+            font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
+        body {
+            background-color: #0b0f19;
+            color: #f1f5f9;
+        }
+
+        .video-js {
+            width: 100%;
+            height: 100%;
+            border-radius: 1rem;
+            overflow: hidden;
+        }
+
+        .vjs-big-play-button {
+            background-color: rgba(6, 182, 212, 0.85) !important;
+            border: none !important;
+            border-radius: 50% !important;
+            width: 2.2em !important;
+            height: 2.2em !important;
+            line-height: 2.2em !important;
+            margin-top: -1.1em !important;
+            margin-left: -1.1em !important;
+        }
+
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .spin {
+            animation: spin 0.8s linear infinite;
+        }
+    </style>
+</head>
+<body class="min-h-screen w-screen overflow-x-hidden pb-28 bg-[#0b0f19]"
+      x-data="{
+          currentTab: 'livetv',
+          searchQuery: '',
+          selectedCategory: 'All',
+          categories: ['All', 'Sports', 'News', 'Movies', 'General', 'Kids', 'Islamic'],
+
+          // Player State
+          activeChannelName: '',
+          isPlayingModal: false,
+          isYoutube: false,
+          youtubeUrl: '',
+          currentStream: '',
+
+          // Admin Modal State
+          showAdminModal: false,
+          isAdminUnlocked: false,
+          adminInput: '',
+          adminError: false,
+
+          newChannelName: '',
+          newChannelUrl: '',
+          newChannelImage: '',
+          newChannelIsYt: false,
+          newChannelCategory: 'General',
+
+          editingIndex: null,
+          editName: '',
+          editUrl: '',
+          editImage: '',
+          editIsYt: false,
+          editCategory: 'General',
+
+          // Channels list
+          channels: [
+              {
+                  name: 'AVA Media',
+                  url: btoa(encodeURIComponent('https://ava2.store/upload/images/720.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Rudaw',
+                  url: btoa(encodeURIComponent('https://live.rudaw.net/hls/rudaw-tv/master.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Kurdistan 24',
+                  url: btoa(encodeURIComponent('https://hlspackager.akamaized.net/live/DB/K24/HLS/K24-avc1_2500000=10002,mp4a_128000=20000.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'NRT HD',
+                  url: btoa(encodeURIComponent('https://hlspackager.akamaized.net/live/DB/NRT_HD/HLS/NRT_HD-avc1_2500000=10002,mp4a_128000=20000.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Kurdsat News',
+                  url: btoa(encodeURIComponent('https://hlspackager.akamaized.net/live/DB/KURDSAT_NEWS/HLS/KURDSAT_NEWS.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Channel 8',
+                  url: btoa(encodeURIComponent('https://live.channel8.com/Channel8-Kurdish/index.fmp4.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Payam Tv',
+                  url: btoa(encodeURIComponent('https://media2.streambrothers.com:1936/8218/8218/playlist.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Nuce Tv',
+                  url: btoa(encodeURIComponent('https://hlspackager.akamaized.net/live/DB/NU_TV/HLS/NU_TV.m3u8?hdnea=exp=1785121293~acl=/live/DB/NU_TV/HLS/NU_TV.m3u8~hmac=8c91909970b637ce0ff9ea271bf62d0f365e0fc917b89e55568ca56c9d9cafd2')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Garyan Media',
+                  url: btoa(encodeURIComponent('https://live20.bozztv.com/giatv/giatv-halabja88garyan/halabja88garyan/chunks.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Komala Tv',
+                  url: btoa(encodeURIComponent('https://komhls.wns.live/hls/stream.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'BBC Bews',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cHM6Ly92cy1obHMtcHVzaC13dy1saXZlLmFrYW1haXplZC5uZXQveD00L2k9dXJuOmJiYzpwaXBzOnNlcnZpY2U6YmJjX25ld3NfY2hhbm5lbF9oZC90PTM4ND/vPTd2MTQvYj01MDcwMDE2L21haW4ubTN1OA&ext=.m3u8'.replace('vPTd2MTQ','j1wdjE0'))),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'BBC Arabic',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL3Byby5wcmluY2U0ay5jb206NzM1NS9saXZlL1BSMjEzMDU0NzI2ODEwLzM4MjY2MDc5MjcyMDIvMTEyODQubTN1OA&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Al Arabia',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL29uZTRrbGl2ZS54eXo6ODA4MC9saXZlL24wNVdBdTNkdEFmdGFkL00xb09sRFVqa1JLMTFqLzc5NDc4Lm0zdTg&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Al Hadath',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cHM6Ly9saXZlLmFsYXJhYml5YS5uZXQvYWxhcmFiaWFwdWJsaXNoL2FsaGFkYXRoLnNtaWwvYWxhcmFiaWFwdWJsaXNoL2FsaGFkYXRoXzEwODBwL2NodW5rcy5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'RT Arabic',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL29uZTRrbGl2ZS54eXo6ODA4MC9saXZlL24wNVdBdTNkdEFmdGFkL00xb09sRFVqa1JLMTFqLzk1OC5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Al Jazeera Documentary',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL3ByZW1pdW1vcmcxMC5jb20vbGl2ZS9lY1M0M3VQei9lWnBwRnJaLzIyODE5Lm0zdTg&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Al Jazeera Arabic',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL3ByZW1pdW1vcmcxMC5jb20vbGl2ZS9lY1M0M3VQei9lWnBwRnJaLzIzMDY0Lm0zdTg&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Fox News',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL3Byby5wcmluY2U0ay5jb206NzM1NS9saXZlL1BSMjEzMDU0NzI2ODEwLzM4MjY2MDc5MjcyMDIvMjM4NDE1Lm0zdTg&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Sky News Arabic',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL29uZTRrbGl2ZS54eXo6ODA4MC9saXZlL24wNVdBdTNkdEFmdGFkL00xb09sRFVqa1JLMTFqLzcxOS5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Media Haber',
+                  url: btoa(encodeURIComponent('https://hlspackager.akamaized.net/live/DB/MEDYA_HABER/HLS/MEDYA_HABER.m3u8?hdnea=exp=1785121403~acl=/live/DB/MEDYA_HABER/HLS/MEDYA_HABER.m3u8~hmac=82c8a9eb8bcb7d314d0c6bf0bee244bd20e8fe6681616ef35ddd4f1e142f653d')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'News'
+              },
+              {
+                  name: 'Kurdsat HD',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?url=https%3A%2F%2Fhlspackager.akamaized.net%2Flive%2FDB%2FKURDSAT_HD%2FHLS%2FKURDSAT_HD-avc1_2500000%3D10002%2Cmp4a_128000%3D20000.m3u8&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Gali Kurdistan',
+                  url: btoa(encodeURIComponent('https://live.host247.net/gk/gksat/playlist.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1585829365295-ab7cd400c167?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Kurdistan Tv',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cHM6Ly81YTNlZDdhNzJlZDRiLnN0cmVhbWxvY2submV0L2xpdmUvU01JTDpteVN0cmVhbS5zbWlsL2NodW5rbGlzdF93NzM1NjkzMjcxX2IxNzAwMDAwX3NsZW5nX3Q2NE1UQTRNSEE9Lm0zdTg&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Waar HD',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cHM6Ly9saXZlLmt3aWttb3Rpb24uY29tL3dhYXJtZWRpYWxpdmUvd2Fhcm1lZGlhLnNtaWwvcGxheWxpc3QubTN1OA&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Avar HD',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL2F2cnN0cmVhbS5jb206MTkzNS9saXZlL0F2YXJUdi9wbGF5bGlzdC5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Kirkuk Tv',
+                  url: btoa(encodeURIComponent('https://live.kirkuklive.live/hls/stream/index.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Khak Tv',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL2xpbmUuMTI3LWNsb3VkZnJvbnQueHl6L2xpdmUvYWViNGRmMjUyMi9kY2VlMzliNTUxLzE4NTkwMjQubTN1OA&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Ala',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?url=http://avrstream.com/live/ala-hd/playlist.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Welat Tv',
+                  url: btoa(encodeURIComponent('https://stream.badinan.xyz/welat/tv/playlist.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Euro Kurd',
+                  url: btoa(encodeURIComponent('https://www.eurokurd.tv/proxy.php?tail=playlist.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Shar Tv',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?url=http://avrstream.com:1935/live/SHARTV/playlist.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Halabja Tv',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?url=http://halabjatv.ddns.net:40/live/halabjatv/playlist.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Channel 21',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?url=http://k21hd.mypsx.net:40/live/KANALI/playlist.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Shna Tv',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?url=http://shnatv.ddns.net:1935/live/shnatv/tracks-v1a1/mono.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Red Tv',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?url=http://avrstream.com:1935/live/REDTV/tracks-v1a1/mono.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Peshang HD',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cHM6Ly9zdHJlYW0uZm9yY2Fyb28uY29tL3N0cmVhbS9obHMvZGVza3RvcC5tM3U4P2ZiY2xpZD1Jd1pYaDBiZ05oWlcwQ01URUFjM0owWXdaaGNIQmZhV1FQTkRNM05qSTJNekUyT1Rjek56ZzRBQUVlWXdsY05GSzg1WFFxb1lKYmJ6QVgxRE9KbVJyTnAydld5Ty1maEYydzlqQmJZUUcxNVBBUzVZS0JtR0VfYWVtX0I5b21mc2ZzVG9hWTZGZi1xTmp0OVE&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Kurd Channel HD',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL29uZTRrbGl2ZS54eXo6ODA4MC9saXZlL24wNVdBdTNkdEFmdGFkL00xb09sRFVqa1JLMTFqLzE3NS5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Cira Tv',
+                  url: btoa(encodeURIComponent('https://hlspackager.akamaized.net/live/DB/CIRA_TV/HLS/CIRA_TV.m3u8?hdnea=exp=1785120874~acl=/live/DB/CIRA_TV/HLS/CIRA_TV.m3u8~hmac=d756e4eef487f007709235dd000c98578ae6206930fd9173a6bdba9a058ee7ed')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Sterk Tv',
+                  url: btoa(encodeURIComponent('https://hlspackager.akamaized.net/live/DB/STERK_TV/HLS/STERK_TV.m3u8?hdnea=exp=1785121088~acl=/live/DB/STERK_TV/HLS/STERK_TV.m3u8~hmac=aec96a6985e69c17fccaf5f3a7bde372f38b1855a4e783a904e26e683c166082')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Jin Tv',
+                  url: btoa(encodeURIComponent('https://hlspackager.akamaized.net/live/DB/JIN_TV/HLS/JIN_TV.m3u8?hdnea=exp=1785121171~acl=/live/DB/JIN_TV/HLS/JIN_TV.m3u8~hmac=879bcf2d607f060da86ac7912f3a97b9bb77f6711ba49b28f7afc7c4ea25cae3')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Rojava Tv',
+                  url: btoa(encodeURIComponent('https://hlspackager.akamaized.net/live/DB/JIN_TV/HLS/JIN_TV.m3u8?hdnea=exp=1785121214~acl=/live/DB/JIN_TV/HLS/JIN_TV.m3u8~hmac=1e12c9aa021dc8f85672d884dc52104fe0436449a928961e527767e2e0c1c13a')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Ronahi Tv',
+                  url: btoa(encodeURIComponent('https://hlspackager.akamaized.net/live/DB/RONAHI_TV/HLS/RONAHI_TV.m3u8?hdnea=exp=1785121488~acl=/live/DB/RONAHI_TV/HLS/RONAHI_TV.m3u8~hmac=4c403d8490741f1596386afb3a8b247a90665c00df26285aae2eb81fa90f49b3')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'TRT Kurdi',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cHM6Ly90di10cnRrdXJkaS5tZWR5YS50cnQuY29tLnRyL21hc3Rlcl83MjAubTN1OA&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Food Network',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL2xpbmUuaGljaAMtbWVkaW5hLmNvbS9saXZlLzY5ZTI4ZDQ0ZTQ4MDcvNTJjZTA2MDQwMS84NjI4NDYubTN1OA'.replace('AM','' ))),
+                  image: 'https://images.unsplash.com/photo-1555396273-367ea4eb4db5?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Kanal D',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?url=https%3A%2F%2Fdemiroren.daioncdn.net%2Fkanald%2Fkanald.m3u8%3Fapp%3Dkanald_web%26ce%3D3&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'A Tv',
+                  url: btoa(encodeURIComponent('https://rnttwmjcin.turknet.ercdn.net/lcpmvefbyo/atv/atv.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Show Tv',
+                  url: btoa(encodeURIComponent('https://ciner.daioncdn.net/showtv/showtv.m3u8?ce=3&app=4bc856ef-4c68-4a94-bc87-37dfaaa66558&st=RBzhSuGauna0OGld-DJUVA&e=1664766175&tv=1')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'TRT 1',
+                  url: btoa(encodeURIComponent('https://tv-trt1.medya.trt.com.tr/master.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'General'
+              },
+              {
+                  name: 'Kurdmax HD',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?url=http%3A%2F%2F123tv.pro%2Flive%2FaSKpxnSj%2FhhewYcb%2F24768.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'Kurdmax Show',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovLzEyM3R2LnByby9saXZlL2FTS3B4blNqL2hoZXdZY2IvMjQ3NzAubTN1OA&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1522869635100-9f4c5e86aa37?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'Niga Movies',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL2xpbmUuMTI3LWNsb3VkZnJvbnQueHl6L2xpdmUvYWViNGRmMjUyMi9kY2VlMzliNTUxLzE4NTg5NTEubTN1OA&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'Bnar Family HD',
+                  url: btoa(encodeURIComponent('https://cdn.karwan.tv/bnar-family/tracks-v1a1/mono.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'Reng Family',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL2ZpbmE0LmNvbS9saXZlL2txbWJ0Zmg3eGcvMXVlY2diamRnNC82OTY2MC5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'Newline',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL29uZTRrbGl2ZS54eXo6ODA4MC9saXZlL24wNVdBdTNkdEFmdGFkL00xb09sRFVqa1JLMTFqLzEzMy5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'Mix Tv',
+                  url: btoa(encodeURIComponent('https://avr.host247.net/live/Mix-kurdy/playlist.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'MMN Movies',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL2xpbmUuMTI3LWNsb3VkZnJvbnQueHl6L2xpdmUvYWViNGRmMjUyMi9kY2VlMzliNTUxLzE4NTg5NDgubTN1OA&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'MMN Drama',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL29uZTRrbGl2ZS54eXo6ODA4MC9saXZlL24wNVdBdTNkdEFmdGFkL00xb09sRFVqa1JLMTFqLzIxMy5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'MMN Show',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?url=http://mmn.mypsx.net:1935/live/mmnhddshow/playlist.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'MBC 1',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovLzIyOTQxLWFyZ3VlZC5kbi00a290dC5jb20vbGl2ZS8yZDgwZDJlNjE1LzI3YTM4ZDM0NmIwZC85MjQ5MTAubTN1OA&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'MBC 2',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovLzIyOTQxLWFyZ3VlZC5kbi00a290dC5jb20vbGl2ZS8yZDgwZDJlNjE1LzI3YTM4ZDM0NmIwZC85MjQ5MDkubTN1OA&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'MBC 3',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovLzIyOTQxLWFyZ3VlZC5kbi00a290dC5jb20vbGl2ZS8yZDgwZDJlNjE1LzI3YTM4ZDM0NmIwZC85MjQ5MDghbmTN1OA&ext=.m3u8'.replace('hbmTN1OA','OTgyNDkwOA=='))),
+                  image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Kids'
+              },
+              {
+                  name: 'MBC 4',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovLzIyOTQxLWFyZ3VlZC5kbi00a290dC5jb20vbGl2ZS8yZDgwZDJlNjE1LzI3YTM4ZDM0NmIwZC85MjQ5MDcubTN1OA&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'MBC 5',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovLzIyOTQxLWFyZ3VlZC5kbi00a290dC5jb20vbGl2ZS8yZDgwZDJlNjE1LzI3YTM4ZDM0NmIwZC85MjQ5MDYubTN1OA&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'MBC Drama',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovLzIyOTQxLWFyZ3VlZC5kbi00a290dC5jb20vbGl2ZS8yZDgwZDJlNjE1LzI3YTM4ZDM0NmIwZC85MjQ5MDQubTN1OA&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'MBC Max',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovLzIyOTQxLWFyZ3VlZC5kbi00a290dC5jb20vbGl2ZS8yZDgwZDJlNjE1LzI3YTM4ZDM0NmIwZC85MjQ5MDAubTN1OA&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1536440136628-849c177e76a1?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Movies'
+              },
+              {
+                  name: 'Carton Network Arabic',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL2ZpbmE0LmNvbS9saXZlL2txbWJ0Zmg3eGcvMXVlY2diamRnNC80NzU3Lm0zdTg&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Kids'
+              },
+              {
+                  name: 'Carton Network UK',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL3hrcmJwcGZqLm1uYnZjYy5jb20vbGl2ZS/GNUhUUFRBMi9NUkNaMkM2Vy8yOTEwMy5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Kids'
+              },
+              {
+                  name: 'Nickelodeon US',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovLzEyM3R2LnByby9saXZlL2FTS3B4blNqL2hoZXdZY2IvMTAyNzI5OS5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Kids'
+              },
+              {
+                  name: 'Nicktoons',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovLzEyM3R2LnByby9saXZlL2FTS3B4blNqL2hoZXdZY2IvMTAyNzI5Mi5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Kids'
+              },
+              {
+                  name: 'Disney',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovLzEyM3R2LnByby9saXZlL2FTS3B4blNqL2hoZXdZY2IvMTAyNzI5OC5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Kids'
+              },
+              {
+                  name: 'Niga Kids',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL29uZTRrbGl2ZS54eXo6ODA4MC9saXZlL24wNVdBdTNkdEFmdGFkL00xb09sRFVqa1JLMTFqLzI2My5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Kids'
+              },
+              {
+                  name: 'Zarok HD',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cHM6Ly96aW5kaWt1cm1hbmciLnphcm9rdHYuY29tLnRyL2hscy9zdHJlYW0ubTN1OA'.replace('cti','_rd'))),
+                  image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Kids'
+              },
+              {
+                  name: 'Afarin Kids',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cHM6Ly81ZGNhYmYwMjZiMTg4LnN0cmVhbWxvY2submV0L2FmYXJpblRWL2xpdmVzdHJlYW0vY2h1bmtsaXN0X3w2MzkyMjEzODEubTN1OA'.replace('f3w6','3w6'))),
+                  image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Kids'
+              },
+              {
+                  name: 'Afarin Bakhcha',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL29uZTRrbGl2ZS54eXo6ODA4MC9saXZlL24wNVdBdTNkdEFmdGFkL00xb09sRFVqa1JLMTFqLzEwNy5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Kids'
+              },
+              {
+                  name: 'Hormazhyar Kids',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL29uZTRrbGl2ZS54eXo6ODA4MC9saXZlL24wNVdBdTNkdEFmdGFkL00xb09sRFVqa1JLMTFqLzkzNSY4Lm0zdTg&ext=.m3u8'.replace('&','j'))),
+                  image: 'https://images.unsplash.com/photo-1513151233558-d860c5398176?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Kids'
+              },
+              {
+                  name: 'Amozhgary HD',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cHM6Ly9hcHAtbGl2ZS5vcmcvbGl2ZS8zMjY4MzM0Yi9pbmRleC5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Islamic'
+              },
+              {
+                  name: 'Dang Quran',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cHM6Ly9saXZlMjAuYm96enR2LmNvbS9naWF0di9naWF0di1RdXJhbi9RdXJhbi9wbGF5bGlzdC5tM3U4&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Islamic'
+              },
+              {
+                  name: 'Iqra Tv',
+                  url: btoa(encodeURIComponent('https://cd198.anystream.uk:9092/iqapp/iq6a7ktv/playlist.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Islamic'
+              },
+              {
+                  name: 'Parwarday Hawler',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL29uZTRrbGl2ZS54eXo6ODA4MC9saXZlL24wNVdBdTNkdEFmdGFkL00xb09sRFVqa1JLMTFqLzgyNTM0Lm0zdTg&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Islamic'
+              },
+              {
+                  name: 'Parwarday Slemani',
+                  url: btoa(encodeURIComponent('https://live.kurdtips.uno/proxy.php?stream=aHR0cDovL29uZTRrbGl2ZS54eXo6ODA4MC9saXZlL24wNVdBdTNkdEFmdGFkL00xb09sRFVqa1JLMTFqLzgyNTMzLm0zdTg&ext=.m3u8')),
+                  image: 'https://images.unsplash.com/photo-1504711434969-e33886168f5c?w=300&auto=format&fit=crop&q=60',
+                  isYt: false,
+                  category: 'Islamic'
+              }
+          ],
+          isLoading: true,
+          loadError: false,
+          isSaving: false,
+
+          encodeData(str) {
+              try {
+                  return btoa(encodeURIComponent(str));
+              } catch(e) { return str; }
+          },
+
+          decodeData(str) {
+              try {
+                  return decodeURIComponent(atob(str));
+              } catch(e) { return str; }
+          },
+
+          async init() {
+              await this.loadChannels();
+              try {
+                  const res = await window.storage.get('admin_unlocked', false);
+                  if (res && res.value === 'true') this.isAdminUnlocked = true;
+              } catch (e) {}
+          },
+
+          async loadChannels() {
+              this.isLoading = true;
+              this.loadError = false;
+              try {
+                  const res = await window.storage.get('channels', true);
+                  if (res && res.value) {
+                      this.channels = JSON.parse(res.value);
+                  } else {
+                      await this.persistChannels();
+                  }
+              } catch (e) {
+              } finally {
+                  this.isLoading = false;
+              }
+          },
+
+          async persistChannels() {
+              this.isSaving = true;
+              try {
+                  const result = await window.storage.set('channels', JSON.stringify(this.channels), true);
+                  if (!result) {
+                      this.loadError = true;
+                  }
+              } catch (e) {
+                  this.loadError = true;
+              } finally {
+                  this.isSaving = false;
+              }
+          },
+
+          get filteredChannels() {
+              return this.channels.filter(ch => {
+                  const matchesSearch = ch.name.toLowerCase().includes(this.searchQuery.toLowerCase());
+                  const matchesCategory = this.selectedCategory === 'All' || (ch.category && ch.category === this.selectedCategory);
+                  return matchesSearch && matchesCategory;
+              });
+          },
+
+          openPlayer(channel) {
+              this.activeChannelName = channel.name;
+              this.isYoutube = channel.isYt;
+              this.isPlayingModal = true;
+
+              const rawUrl = this.decodeData(channel.url);
+
+              if (channel.isYt) {
+                  this.youtubeUrl = rawUrl;
+                  if (window.player) window.player.pause();
+              } else {
+                  this.currentStream = rawUrl;
+                  this.$nextTick(() => {
+                      if (window.player) {
+                          window.player.src({ src: rawUrl, type: 'application/x-mpegURL' });
+                          window.player.load();
+                          window.player.play().catch(e => console.log('Autoplay handled', e));
+                      }
+                  });
+              }
+          },
+
+          closePlayer() {
+              this.isPlayingModal = false;
+              this.currentStream = '';
+              this.youtubeUrl = '';
+              if (window.player) window.player.pause();
+          },
+
+          async checkAdmin() {
+              if (this.adminInput.trim() === 'PDK') {
+                  this.isAdminUnlocked = true;
+                  this.adminError = false;
+                  this.showAdminModal = false;
+                  this.adminInput = '';
+                  this.currentTab = 'settings';
+                  try {
+                      await window.storage.set('admin_unlocked', 'true', false);
+                  } catch (e) {}
+              } else {
+                  this.adminError = true;
+              }
+          },
+
+          async lockAdmin() {
+              this.isAdminUnlocked = false;
+              this.adminInput = '';
+              this.currentTab = 'livetv';
+              try {
+                  await window.storage.delete('admin_unlocked', false);
+              } catch (e) {}
+          },
+
+          handleImageUpload(event, type) {
+              const file = event.target.files[0];
+              if (file) {
+                  const reader = new FileReader();
+                  reader.onload = (e) => {
+                      if (type === 'new') this.newChannelImage = e.target.result;
+                      else if (type === 'edit') this.editImage = e.target.result;
+                  };
+                  reader.readAsDataURL(file);
+              }
+          },
+
+          async addChannel() {
+              if (!this.newChannelName || !this.newChannelUrl) return;
+
+              const newCh = {
+                  name: this.newChannelName,
+                  url: this.encodeData(this.newChannelUrl.trim()),
+                  image: this.newChannelImage || 'https://via.placeholder.com/300/1e293b/ffffff?text=' + encodeURIComponent(this.newChannelName),
+                  isYt: this.newChannelIsYt,
+                  category: this.newChannelCategory || 'General'
+              };
+
+              this.channels.push(newCh);
+              await this.persistChannels();
+
+              this.newChannelName = '';
+              this.newChannelUrl = '';
+              this.newChannelImage = '';
+              this.newChannelIsYt = false;
+              this.newChannelCategory = 'General';
+              const imgInput = document.getElementById('channelImageInput');
+              if (imgInput) imgInput.value = '';
+          },
+
+          startEdit(index) {
+              this.editingIndex = index;
+              const ch = this.channels[index];
+              this.editName = ch.name;
+              this.editUrl = this.decodeData(ch.url);
+              this.editImage = ch.image || '';
+              this.editIsYt = ch.isYt || false;
+              this.editCategory = ch.category || 'General';
+          },
+
+          cancelEdit() {
+              this.editingIndex = null;
+          },
+
+          async saveEdit(index) {
+              if (!this.editName || !this.editUrl) return;
+              this.channels[index] = {
+                  name: this.editName,
+                  url: this.encodeData(this.editUrl.trim()),
+                  image: this.editImage || 'https://via.placeholder.com/300/1e293b/ffffff?text=' + encodeURIComponent(this.editName),
+                  isYt: this.editIsYt,
+                  category: this.editCategory
+              };
+              await this.persistChannels();
+              this.cancelEdit();
+          },
+
+          async deleteChannel(index) {
+              this.channels.splice(index, 1);
+              await this.persistChannels();
+          },
+
+          async moveChannel(index, direction) {
+              const newIndex = index + direction;
+              if (newIndex < 0 || newIndex >= this.channels.length) return;
+              const item = this.channels.splice(index, 1)[0];
+              this.channels.splice(newIndex, 0, item);
+              await this.persistChannels();
+          }
+      }">
+
+    <!-- Top Header -->
+    <header class="pt-5 px-4 max-w-6xl mx-auto flex items-center justify-between gap-3">
+        <h1 class="text-xl md:text-2xl font-extrabold text-white tracking-tight shrink-0">
+            Nova TV
+        </h1>
+
+        <!-- Search Bar -->
+        <div class="relative flex-1 max-w-md">
+            <span class="absolute inset-y-0 left-3.5 flex items-center text-slate-400 pointer-events-none">
+                <i class="fa-solid fa-magnifying-glass text-xs"></i>
+            </span>
+            <input
+                type="text"
+                x-model="searchQuery"
+                placeholder="Search channels..."
+                class="w-full bg-[#161c2e] border border-slate-800 text-xs text-white pl-9 pr-4 py-2.5 rounded-full focus:outline-none focus:border-cyan-500 transition-all placeholder:text-slate-500"
+            />
+        </div>
+
+        <!-- Hidden Admin Trigger Button -->
+        <button @click="if(!isAdminUnlocked){ showAdminModal = true; adminError = false; } else { currentTab = 'settings'; }"
+                :class="isAdminUnlocked ? 'bg-cyan-500/20 text-cyan-400 border-cyan-500/40' : 'bg-[#161c2e] text-slate-400 border-slate-800 hover:text-white'"
+                class="w-10 h-10 rounded-full border flex items-center justify-center transition shrink-0">
+            <i class="fa-solid fa-user-shield text-sm"></i>
+        </button>
+    </header>
+
+    <!-- Main Content Tab: Live TV -->
+    <main x-show="currentTab === 'livetv'" class="max-w-6xl mx-auto px-4 mt-5">
+
+        <!-- Category Filter Pills -->
+        <div class="flex items-center gap-2 overflow-x-auto no-scrollbar pb-3">
+            <template x-for="cat in categories" :key="cat">
+                <button
+                    @click="selectedCategory = cat"
+                    :class="selectedCategory === cat ? 'bg-[#00a8ff] text-white font-bold shadow-lg shadow-cyan-500/25 border-[#00a8ff]' : 'bg-[#161c2e]/80 text-slate-400 hover:text-white border-slate-800'"
+                    class="px-5 py-2 rounded-full text-xs transition-all border shrink-0"
+                    x-text="cat">
+                </button>
+            </template>
+        </div>
+
+        <!-- Loading State -->
+        <div x-show="isLoading" class="flex flex-col items-center justify-center py-20 text-slate-500 text-xs">
+            <i class="fa-solid fa-circle-notch spin text-3xl mb-3 text-cyan-500"></i>
+            بارکردن...
+        </div>
+
+        <!-- Channel Cards Grid (3 per row) -->
+        <div x-show="!isLoading" class="grid grid-cols-3 gap-3 md:gap-4 mt-3">
+            <template x-for="(channel, index) in filteredChannels" :key="index">
+                <div @click="openPlayer(channel)"
+                     class="group relative aspect-square bg-[#161c2e] rounded-2xl overflow-hidden border border-slate-800/80 cursor-pointer shadow-md active:scale-95 transition-all duration-200">
+
+                    <!-- Channel Image Cover -->
+                    <img :src="channel.image" :alt="channel.name" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />
+
+                    <!-- Bottom Dark Gradient & Title -->
+                    <div class="absolute inset-0 bg-gradient-to-t from-black/90 via-black/30 to-transparent flex flex-col justify-end p-2 text-center">
+                        <span class="text-[11px] md:text-sm font-bold text-white tracking-wide truncate w-full drop-shadow" x-text="channel.name"></span>
+                    </div>
+                </div>
+            </template>
+        </div>
+
+        <!-- Empty State -->
+        <div x-show="!isLoading && filteredChannels.length === 0" class="flex flex-col items-center justify-center py-20 text-slate-500 text-xs">
+            <i class="fa-solid fa-tv text-4xl mb-3 text-slate-600"></i>
+            هیچ کەناڵێک بەردەست نییە
+        </div>
+    </main>
+
+    <!-- Movies Tab -->
+    <main x-show="currentTab === 'movies'" class="max-w-6xl mx-auto px-4 mt-12 text-center text-slate-400">
+        <i class="fa-solid fa-film text-4xl mb-3 text-cyan-400"></i>
+        <h2 class="text-lg font-bold text-white">بەشی فیلمەکان</h2>
+        <p class="text-xs text-slate-500 mt-1">بەم زووانە بەردەست دەبێت</p>
+    </main>
+
+    <!-- Series Tab -->
+    <main x-show="currentTab === 'series'" class="max-w-6xl mx-auto px-4 mt-12 text-center text-slate-400">
+        <i class="fa-solid fa-tv text-4xl mb-3 text-cyan-400"></i>
+        <h2 class="text-lg font-bold text-white">بەشی زنجیرەکان</h2>
+        <p class="text-xs text-slate-500 mt-1">بەم زووانە بەردەست دەبێت</p>
+    </main>
+
+    <!-- Profile Tab -->
+    <main x-show="currentTab === 'profile'" class="max-w-6xl mx-auto px-4 mt-12 text-center text-slate-400">
+        <i class="fa-solid fa-user-circle text-4xl mb-3 text-cyan-400"></i>
+        <h2 class="text-lg font-bold text-white">پرۆفایل</h2>
+        <p class="text-xs text-slate-500 mt-1">زانیاری هەژمارەکەت</p>
+    </main>
+
+    <!-- Settings Tab -->
+    <main x-show="currentTab === 'settings'" class="max-w-3xl mx-auto px-4 mt-6">
+        <div x-show="isAdminUnlocked" class="bg-[#161c2e] border border-slate-800 rounded-3xl p-5 md:p-7 shadow-2xl space-y-6">
+            <div class="border-b border-slate-800 pb-4 flex justify-between items-center">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-gear text-cyan-400"></i> بەڕێوەبردنی کەناڵەکان
+                </h2>
+                <button @click="lockAdmin()" class="text-xs bg-rose-500/10 text-rose-400 border border-rose-500/20 px-3 py-1 rounded-xl hover:bg-rose-500/20 transition">
+                    دەرچوون
+                </button>
+            </div>
+
+            <p class="text-[10px] text-amber-400/80 bg-amber-500/5 border border-amber-500/20 rounded-xl px-3 py-2">
+                <i class="fa-solid fa-circle-info mr-1"></i>
+                کەناڵێک کە زیادی بکەیت بۆ هەموو بەکارهێنەرانی ئەم ئەپە دیارە، نەک تەنها بۆ خۆت.
+            </p>
+
+            <!-- Add Channel Form -->
+            <div class="bg-[#0b0f19] p-4 rounded-2xl border border-slate-800 space-y-3">
+                <h3 class="text-xs font-bold text-cyan-400 uppercase tracking-wider">زیادکردنی کەناڵی نوێ</h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input type="text" x-model="newChannelName" placeholder="ناوی کەناڵ" class="bg-[#161c2e] border border-slate-700 px-3.5 py-2 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500" />
+                    <input type="file" id="channelImageInput" @change="handleImageUpload($event, 'new')" accept="image/*" class="bg-[#161c2e] border border-slate-700 px-3 py-1 rounded-xl text-xs text-slate-300 file:mr-2 file:py-1 file:px-2.5 file:rounded-lg file:border-0 file:text-xs file:font-semibold file:bg-cyan-500 file:text-white cursor-pointer" />
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                    <input type="text" x-model="newChannelUrl" placeholder="لینکی پەخش (.m3u8 یان iframe)" class="bg-[#161c2e] border border-slate-700 px-3.5 py-2 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500" />
+                    <select x-model="newChannelCategory" class="bg-[#161c2e] border border-slate-700 px-3.5 py-2 rounded-xl text-xs text-white focus:outline-none focus:border-cyan-500">
+                        <template x-for="cat in categories.filter(c => c !== 'All')" :key="cat">
+                            <option :value="cat" x-text="cat" class="bg-[#0b0f19] text-white"></option>
+                        </template>
+                    </select>
+                </div>
+
+                <div class="flex items-center gap-2 pt-1">
+                    <input type="checkbox" id="isYtCheck" x-model="newChannelIsYt" class="rounded bg-slate-800 border-slate-700 text-cyan-500 focus:ring-0" />
+                    <label for="isYtCheck" class="text-xs text-slate-300 cursor-pointer">ئایا ئەمە لینکی یوتیوب/ایفرەیمە؟</label>
+                </div>
+
+                <button @click="addChannel()" :disabled="isSaving" class="w-full py-2.5 rounded-xl bg-cyan-500 hover:bg-cyan-400 disabled:opacity-50 text-white text-xs font-bold shadow-lg shadow-cyan-500/20 transition">
+                    <span x-show="!isSaving">زیادکردنی کەناڵ</span>
+                    <span x-show="isSaving"><i class="fa-solid fa-circle-notch spin"></i> پاشەکەوتکردن...</span>
+                </button>
+            </div>
+
+            <!-- Manage Existing Channels -->
+            <div class="space-y-3">
+                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">لیستی کەناڵەکان</h3>
+                <div class="max-h-72 overflow-y-auto space-y-2 pr-1 no-scrollbar">
+                    <template x-for="(channel, index) in channels" :key="index">
+                        <div class="bg-[#0b0f19] p-3 rounded-2xl border border-slate-800 flex flex-col gap-2">
+                            <div class="flex justify-between items-center" x-show="editingIndex !== index">
+                                <div class="flex items-center gap-3">
+                                    <img :src="channel.image" class="w-9 h-9 rounded-xl object-cover" />
+                                    <div>
+                                        <span class="text-xs font-bold text-white block" x-text="channel.name"></span>
+                                        <span class="text-[10px] text-cyan-400" x-text="channel.category || 'General'"></span>
+                                    </div>
+                                </div>
+
+                                <div class="flex items-center gap-1.5">
+                                    <button @click="moveChannel(index, -1)" :disabled="index === 0" class="bg-slate-800 text-slate-300 px-2 py-1 rounded-lg text-xs disabled:opacity-30">
+                                        <i class="fa-solid fa-arrow-up"></i>
+                                    </button>
+                                    <button @click="moveChannel(index, 1)" :disabled="index === channels.length - 1" class="bg-slate-800 text-slate-300 px-2 py-1 rounded-lg text-xs disabled:opacity-30">
+                                        <i class="fa-solid fa-arrow-down"></i>
+                                    </button>
+                                    <button @click="startEdit(index)" class="bg-cyan-500/10 text-cyan-400 px-2.5 py-1 rounded-lg text-xs">دەستکاری</button>
+                                    <button @click="deleteChannel(index)" class="bg-rose-500/10 text-rose-400 px-2.5 py-1 rounded-lg text-xs">سڕینەوە</button>
+                                </div>
+                            </div>
+
+                            <!-- Edit Box -->
+                            <div x-show="editingIndex === index" class="space-y-2 p-2 bg-[#161c2e] rounded-xl">
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="text" x-model="editName" class="bg-[#0b0f19] border border-slate-700 px-2.5 py-1.5 rounded text-xs text-white" />
+                                    <input type="file" @change="handleImageUpload($event, 'edit')" accept="image/*" class="bg-[#0b0f19] border border-slate-700 px-2 py-1 rounded text-xs text-slate-300" />
+                                </div>
+                                <div class="grid grid-cols-2 gap-2">
+                                    <input type="text" x-model="editUrl" class="bg-[#0b0f19] border border-slate-700 px-2.5 py-1.5 rounded text-xs text-white" />
+                                    <select x-model="editCategory" class="bg-[#0b0f19] border border-slate-700 px-2.5 py-1.5 rounded text-xs text-white">
+                                        <template x-for="cat in categories.filter(c => c !== 'All')" :key="cat">
+                                            <option :value="cat" x-text="cat"></option>
+                                        </template>
+                                    </select>
+                                </div>
+                                <div class="flex justify-end gap-2 pt-1">
+                                    <button @click="cancelEdit()" class="bg-slate-700 text-slate-300 px-3 py-1 rounded text-xs">پاشگەزبوونەوە</button>
+                                    <button @click="saveEdit(index)" class="bg-cyan-500 text-white px-3 py-1 rounded text-xs font-bold">پاشەکەوتکردن</button>
+                                </div>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <!-- Admin Hidden Modal -->
+    <div x-show="showAdminModal" class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-md" style="display: none;">
+        <div class="relative w-full max-w-sm bg-[#161c2e] border border-slate-800 rounded-3xl p-6 shadow-2xl flex flex-col items-center text-center space-y-4">
+            <button @click="showAdminModal = false" class="absolute top-4 right-4 text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+
+            <div class="w-12 h-12 rounded-2xl bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 flex items-center justify-center mb-1">
+                <i class="fa-solid fa-user-shield text-xl"></i>
+            </div>
+
+            <div class="w-full space-y-2">
+                <input
+                    type="password"
+                    x-model="adminInput"
+                    @keyup.enter="checkAdmin()"
+                    class="w-full bg-[#0b0f19] border border-slate-700 px-4 py-3 rounded-2xl text-xs text-center font-bold text-white focus:outline-none focus:border-cyan-500"
+                    placeholder="کۆدەکە بنووسە"
+                />
+                <p x-show="adminError" class="text-rose-400 text-xs font-semibold">کۆدی بەڕێوەبەر هەڵەیە!</p>
+            </div>
+
+            <button @click="checkAdmin()" class="w-full py-3 rounded-2xl bg-cyan-500 hover:bg-cyan-400 font-bold text-xs text-white shadow-lg shadow-cyan-500/20 transition">
+                چوونەژوورەوە
+            </button>
+        </div>
+    </div>
+
+    <!-- Video Player Popup Modal -->
+    <div x-show="isPlayingModal" class="fixed inset-0 z-50 flex items-center justify-center p-3 md:p-6 bg-black/90 backdrop-blur-md" style="display: none;">
+        <div class="relative w-full max-w-4xl bg-[#161c2e] border border-slate-800 rounded-3xl overflow-hidden shadow-2xl flex flex-col">
+            <!-- Modal Header -->
+            <div class="flex items-center justify-between px-5 py-3 border-b border-slate-800 bg-[#0b0f19]">
+                <div class="flex items-center gap-3">
+                    <span class="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse"></span>
+                    <h3 class="text-sm font-bold text-white truncate" x-text="activeChannelName"></h3>
+                </div>
+                <button @click="closePlayer()" class="w-8 h-8 rounded-full bg-slate-800 text-slate-300 hover:text-white flex items-center justify-center transition">
+                    <i class="fa-solid fa-xmark text-sm"></i>
+                </button>
+            </div>
+
+            <!-- Video Player Area -->
+            <div class="w-full aspect-video bg-black relative">
+                <div x-show="!isYoutube" class="w-full h-full">
+                    <video-js id="tvPlayer" class="vjs-big-play-centered" controls preload="auto" data-setup='{}'>
+                        <source :src="currentStream" type="application/x-mpegURL" />
+                    </video-js>
+                </div>
+                <div x-show="isYoutube" class="w-full h-full">
+                    <iframe class="w-full h-full border-0" :src="youtubeUrl" allow="autoplay; encrypted-media" allowfullscreen></iframe>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Floating Navigation Bar -->
+    <nav class="fixed bottom-4 left-1/2 -translate-x-1/2 z-40 bg-[#161c2e]/90 backdrop-blur-2xl border border-slate-700/60 rounded-full px-5 py-2.5 flex items-center justify-between gap-6 shadow-2xl shadow-black/80">
+        <button @click="currentTab = 'livetv'"
+                :class="currentTab === 'livetv' ? 'text-cyan-400 font-bold' : 'text-slate-400 hover:text-slate-200'"
+                class="flex flex-col items-center gap-1 transition">
+            <i class="fa-solid fa-house text-lg"></i>
+            <span class="text-[10px]">Live TV</span>
+        </button>
+
+        <button @click="currentTab = 'movies'"
+                :class="currentTab === 'movies' ? 'text-cyan-400 font-bold' : 'text-slate-400 hover:text-slate-200'"
+                class="flex flex-col items-center gap-1 transition">
+            <i class="fa-solid fa-border-all text-lg"></i>
+            <span class="text-[10px]">Movies</span>
+        </button>
+
+        <button @click="currentTab = 'series'"
+                :class="currentTab === 'series' ? 'text-cyan-400 font-bold' : 'text-slate-400 hover:text-slate-200'"
+                class="flex flex-col items-center gap-1 transition">
+            <i class="fa-solid fa-tv text-lg"></i>
+            <span class="text-[10px]">Series</span>
+        </button>
+
+        <button @click="currentTab = 'profile'"
+                :class="currentTab === 'profile' ? 'text-cyan-400 font-bold' : 'text-slate-400 hover:text-slate-200'"
+                class="flex flex-col items-center gap-1 transition relative">
+            <i class="fa-regular fa-user text-lg"></i>
+            <span class="text-[10px]">Profile</span>
+            <span class="absolute -top-1 -right-2 bg-amber-500 text-black font-extrabold text-[8px] px-1 rounded-sm">B</span>
+        </button>
+
+        <button @click="if(!isAdminUnlocked){ showAdminModal = true; adminError = false; } else { currentTab = 'settings'; }"
+                :class="currentTab === 'settings' ? 'text-cyan-400 font-bold' : 'text-slate-400 hover:text-slate-200'"
+                class="flex flex-col items-center gap-1 transition">
+            <i class="fa-solid fa-gear text-lg"></i>
+            <span class="text-[10px]">Settings</span>
+        </button>
+    </nav>
+
+    <!-- Video.js Script Initialization -->
+    <script src="https://vjs.zencdn.net/8.10.0/video.min.js"></script>
+    <script>
+        videojs.options.html5 = { nativeAudioTracks: false, nativeVideoTracks: false };
+        window.player = videojs('tvPlayer');
+    </script>
+</body>
+</html>
